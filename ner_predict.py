@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-credential = AzureKeyCredential("c414594e47f9420bb757479d0e49ea35")
-endpoint="https://nhungcyents.cognitiveservices.azure.com/"
+credential = AzureKeyCredential("188fe77ba5e440e9bef0a01842e6e38e")
+endpoint="https://hacklanguage.cognitiveservices.azure.com/"
 
 text_analytics_client = TextAnalyticsClient(endpoint, credential)
 

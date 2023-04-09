@@ -12,9 +12,11 @@ from azure.ai.textanalytics import TextAnalyticsClient
 
 from dotenv import load_dotenv
 import nltk
+# import nltk
+nltk.download('punkt')
 
 import spacy
-
+import numpy as np
 # from spacy import displaycy
 
 nlp = spacy.load('en_core_web_sm')
@@ -25,6 +27,8 @@ nlp = spacy.load('en_core_web_sm')
 from spacy.matcher import Matcher 
 from spacy.tokens import Span 
 import tqdm
+
+import bisect
 
 load_dotenv()
 
@@ -143,13 +147,46 @@ for idx, sentence in enumerate(sent_text):
 
 entities_df = pd.DataFrame(list(zip(idx_list, etext_list, ecategory_list, econfi_score_list, eoffset_list))).reset_index(drop=True)
 entities_df.columns = ['idx', 'entity', 'entity_category', 'entity_score', 'entity_offset']
+entities_df['has_rel'] = ""
 
 entity_to_filter = ['DateTime', 'Quantity']
 
-threat_entities_df = entities_df[entities_df['entity_category'].isin(entity_to_filter)]
+threat_entities_df = entities_df[~entities_df['entity_category'].isin(entity_to_filter)]
 
 relations = [[idx, get_relation(sentence)] for idx, sentence in enumerate(sent_text)]
+relations_df = pd.DataFrame(relations).reset_index(drop=True)
+relations_df.columns = ['idx', 'relations']
+relations_df[['relation', 'offset']] = pd.DataFrame(relations_df['relations'].tolist(), index=relations_df.index)
+
+
+
+# for idx, row in relations_df.iterrows(): 
+#     print(row)
+#     re_offset 
+
+def get_lower_bound(haystack, needle):
+    start_idx = bisect.bisect(haystack, needle)
+    # print(row)
+    # import pdb
+    # pdb.set_trace()
+    if 0 < start_idx < len(haystack):
+        return start_idx-1
+    else:
+        # raise ValueError(f"{needle} is out of bounds of {haystack}")
+        # pass
+        return np.nan
+
+for id, row in relations_df.iterrows():
+
+    print(row)
+    sub = entities_df[entities_df['idx']==id]
+    start_idx = get_lower_bound(sub.entity_offset.tolist(), row['offset'])
+    if start_idx >= 0:
+        sub.loc[start_idx: start_idx+1, 'has_rel'] = idx
+        entities_df.loc[entities_df['idx']==idx, 'has_rel'] = sub['has_rel']
 
 import pdb
 pdb.set_trace()
+     
+
 
