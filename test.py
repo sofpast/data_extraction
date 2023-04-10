@@ -28,6 +28,9 @@ import tqdm
 import bisect
 import math
 
+# from __future__ import unicode_literals, print_function
+from spacy.lang.en import English 
+
 load_dotenv()
 
 
@@ -54,15 +57,15 @@ for para in soup.find_all("p"):
 for h2 in soup.find_all("h2"):
 	h2_list.append(h2.get_text())
 	
-for h3 in soup.find_all("h3"):
-	h3_list.append(h3.get_text())
+# for h3 in soup.find_all("h3"):
+# 	h3_list.append(h3.get_text())
 	
 # import pdb
 # pdb.set_trace()
+text = p_list
+# text = p_list + h2_list + h3_list
 
-text = p_list + h2_list + h3_list
-
-documents = '.'.join(str(x) for x in text)
+documents = ''.join(str(x) for x in text)
 
 credential = AzureKeyCredential("188fe77ba5e440e9bef0a01842e6e38e")
 endpoint="https://hacklanguage.cognitiveservices.azure.com/"
@@ -81,10 +84,13 @@ text_analytics_client = TextAnalyticsClient(endpoint, credential)
 # 	"In the last year, geopolitical tension has led to an uptick of reported cybercrime events fueled by hacktivist groups"]
 
 
-sent_text = nltk.sent_tokenize(documents) # this gives us a list of sentences
-# now loop over each sentence and tokenize it separately
-# start_pos = []
-# end_pos = []
+# sent_text = nltk.sent_tokenize(documents) # this gives us a list of sentences
+
+nlp = spacy.load('en_core_web_sm')
+# nlp.add_pipe(nlp.create_pipe('sentencizer')) # updated
+# doc = nlp(documents)
+sent_text = [i for i in nlp(documents).sents]
+
 def get_relation(sent):
 
     doc = nlp(sent)
@@ -123,15 +129,14 @@ eoffset_list = []
 idx_list = []
 
 for idx, sentence in enumerate(sent_text):
-    _sentence = [sentence]
+    # import pdb
+    # pdb.set_trace()
+    _sentence = [str(sentence)]
     response = text_analytics_client.recognize_entities(_sentence, language="en")
     result = [doc for doc in response if not doc.is_error]
 
     for doc in result:
         for entity in doc.entities:
-            # import pdb
-            # pdb.set_trace()
-            # entities.append(entity)
             print(f"Entity: {entity.text}")
             etext_list.append(entity.text)
             print(f"...Category: {entity.category}")
@@ -148,11 +153,11 @@ entities_df.columns = ['idx', 'entity', 'entity_category', 'entity_score', 'enti
 entities_df['has_rel'] = ""
 entities_df['is_source'] = ""
 
-entity_to_filter = ['DateTime', 'Quantity']
+# entity_to_filter = ['DateTime', 'Quantity']
 
-threat_entities_df = entities_df[~entities_df['entity_category'].isin(entity_to_filter)]
+# threat_entities_df = entities_df[~entities_df['entity_category'].isin(entity_to_filter)]
 
-relations = [[idx, get_relation(sentence)] for idx, sentence in enumerate(sent_text)]
+relations = [[idx, get_relation(str(sentence))] for idx, sentence in enumerate(sent_text)]
 relations_df = pd.DataFrame(relations).reset_index(drop=True)
 relations_df.columns = ['idx', 'relations']
 relations_df[['relation', 'offset']] = pd.DataFrame(relations_df['relations'].tolist(), index=relations_df.index)
