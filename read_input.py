@@ -6,6 +6,7 @@ import sys
 import traceback
 import asyncio
 import glob
+import numpy as np
 
 
 if sys.platform == 'win32':
@@ -179,37 +180,87 @@ try:
 
     # Drop the entire Graph
     input("We're about to drop whatever graph is on the server. Press any key to continue...")
-    cleanup_graph(client)
+    # cleanup_graph(client)
     df = []
     # Read json files
-    for file in glob.glob('data/*.json'):
-        try:
-            # import pdb
-            # pdb.set_trace()
-            df = pd.read_json(file)
-            df_kv = df['fields'].apply(pd.Series)
-            df = pd.concat([df, df_kv], axis=1)
+    # for file in glob.glob('data/*.json'):
+    #     try:
+    #         df = pd.read_json(file)
+    #         df_kv = df['fields'].apply(pd.Series)
+    #         df = pd.concat([df, df_kv], axis=1)
 
-            df['k_addV'] = "g.addV('key').property('content','" + df['key'] + "').property('doc_id','"+ df['document_id'] + "').property('key_bbox', '" + df['key_bbox'].astype(str) + "').property('pk', 'pk')"
-            df['v_addV'] = "g.addV('value').property('content','" + df['value'] + "').property('doc_id','"+ df['document_id'] + "').property('key_bbox', '" + df['value_bbox'].astype(str) + "').property('pk', 'pk')"
-            # df['k_entity'] = "g.V().hasLabel('key').has('content', '" + df['key'] + "')"
-            # df['v_entity'] = "g.V().hasLabel('value').has('content', '" + df['value'] + "')"
-            df['addE'] = "g.V().hasLabel('key').has('content', '" + df['key'] + "').addE('knows').to(g.V().hasLabel('value').has('content', '" + df['value'] + "'))"
+    #         df['k_addV'] = "g.addV('key').property('content','" + df['key'] + "').property('doc_id','"+ df['document_id'] + "').property('key_bbox', '" + df['key_bbox'].astype(str) + "').property('pk', 'pk')"
+    #         df['v_addV'] = "g.addV('value').property('content','" + df['value'] + "').property('doc_id','"+ df['document_id'] + "').property('key_bbox', '" + df['value_bbox'].astype(str) + "').property('pk', 'pk')"
+    #         df['addE'] = "g.V().hasLabel('key').has('content', '" + df['key'] + "').addE('knows').to(g.V().hasLabel('value').has('content', '" + df['value'] + "'))"
 
-            _gremlin_insert_vertices = df['k_addV'].tolist() + df['v_addV'].tolist()
+    #         _gremlin_insert_vertices = df['k_addV'].tolist() + df['v_addV'].tolist()
 
-            _gremlin_insert_edges = df['addE'].tolist()
-        except GremlinServerError as e:
-            print(e)
-            pass
+    #         _gremlin_insert_edges = df['addE'].tolist()
+    #     except GremlinServerError as e:
+    #         print(e)
+    #         pass
 
-        # Insert all vertices
-        input("Let's insert some vertices into the graph. Press any key to continue...")
-        insert_vertices(client)
+    #     # Insert all vertices
+    #     input("Let's insert some vertices into the graph. Press any key to continue...")
+    #     insert_vertices(client)
 
-        # Create edges between vertices
-        input("Now, let's add some edges between the vertices. Press any key to continue...")
-        insert_edges(client)
+    #     # Create edges between vertices
+    #     input("Now, let's add some edges between the vertices. Press any key to continue...")
+    #     insert_edges(client)
+
+    en_df = pd.read_pickle('data/entities_df.pkl')
+    rel_df = pd.read_pickle('data/relations_df.pkl')
+    rel_df = rel_df.rename(columns={'idx':'has_rel'})
+
+    merged_df = en_df.merge(rel_df, on='has_rel', how='left')
+    df = merged_df.drop_duplicates(subset=['entity'], keep='first')
+    df['des_uuid'] = np.NaN
+
+    df['addV'] = "g.addV('" + df['entity_category'] + "').property('id','" + df['entity'] + "').property('entity_score','"+ df['entity_score'].astype(str) + "').property('sent_idx','"+ df.idx.astype(str) + "').property('en_idx','" + df.index.astype(str) + "').property('pk', 'pk')"
+    # df['v_addV'] = "g.addV('value').property('content','" + df['value'] + "').property('doc_id','"+ df['document_id'] + "').property('key_bbox', '" + df['value_bbox'].astype(str) + "').property('pk', 'pk')"
+    # df['addE'] = "g.V().hasLabel('key').has('content', '" + df['key'] + "').addE('knows').to(g.V().hasLabel('value').has('content', '" + df['value'] + "'))"
+
+    # "g.V().hasLabel('" + sub['entity_category'] + "').has('id', '" + df['entity'] + "')"
+
+    merged_df['getV'] = "g.V().hasLabel('" + merged_df['entity_category'] + "').has('id','" + merged_df['entity'] + "')"
+    
+
+    _gremlin_insert_vertices = df['addV'].tolist()
+    _gremlin_insert_edges = []
+
+
+
+
+    import pdb
+    pdb.set_trace()
+    # Insert all vertices
+    input("Let's insert some vertices into the graph. Press any key to continue...")
+    # insert_vertices(client)
+
+    for idx, row in merged_df.iterrows():
+        
+        sub = merged_df[(merged_df.idx==idx) & (~merged_df['offset'].isnull())]
+        if sub[sub['is_source']=="Y"].shape[0] > 0:
+            getV_list = sub['getV'].tolist()
+            relation = sub['relation'].iloc[0] 
+
+            for i in range(1, len(getV_list)): 
+                addE_cmd = ""
+                addE_cmd = getV_list[0] + ".addE('" + relation + "').to(" + getV_list[i] + ")"
+                # import pdb
+                # pdb.set_trace()
+                print(addE_cmd)
+                _gremlin_insert_edges.append(addE_cmd)
+                
+        else:
+            continue
+
+    # Create edges between vertices
+    # input("Now, let's add some edges between the vertices. Press any key to continue...")
+    # insert_edges(client)
+
+    # import pdb
+    # pdb.set_trace()
 
     # Update a vertex
     # input("Ah, sorry. I made a mistake. Let's change the age of this vertex. Press any key to continue...")

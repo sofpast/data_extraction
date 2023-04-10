@@ -21,14 +21,12 @@ import numpy as np
 
 nlp = spacy.load('en_core_web_sm')
 
-# import pdb
-# pdb.set_trace()
-
 from spacy.matcher import Matcher 
 from spacy.tokens import Span 
 import tqdm
 
 import bisect
+import math
 
 load_dotenv()
 
@@ -148,6 +146,7 @@ for idx, sentence in enumerate(sent_text):
 entities_df = pd.DataFrame(list(zip(idx_list, etext_list, ecategory_list, econfi_score_list, eoffset_list))).reset_index(drop=True)
 entities_df.columns = ['idx', 'entity', 'entity_category', 'entity_score', 'entity_offset']
 entities_df['has_rel'] = ""
+entities_df['is_source'] = ""
 
 entity_to_filter = ['DateTime', 'Quantity']
 
@@ -179,11 +178,15 @@ def get_lower_bound(haystack, needle):
 for id, row in relations_df.iterrows():
 
     print(row)
-    sub = entities_df[entities_df['idx']==id]
+    sub = entities_df[entities_df['idx']==id].reset_index(drop=True)
     start_idx = get_lower_bound(sub.entity_offset.tolist(), row['offset'])
-    if start_idx >= 0:
-        sub.loc[start_idx: start_idx+1, 'has_rel'] = idx
-        entities_df.loc[entities_df['idx']==idx, 'has_rel'] = sub['has_rel']
+    if math.isnan(start_idx) is False:
+        print(f"{id} -- it is not NaN")      
+        sub_olist = sub.loc[start_idx: start_idx+1, 'entity_offset'].tolist()
+        entities_df.loc[(entities_df['idx']==id)& (entities_df.entity_offset == sub_olist[0]), 'is_source'] = "Y"
+        entities_df.loc[(entities_df['idx']==id) & (entities_df['entity_offset'].isin(sub_olist)), 'has_rel'] = id
+    else:
+         continue
 
 import pdb
 pdb.set_trace()
