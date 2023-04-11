@@ -29,18 +29,21 @@ try:
     
     merged_df = pd.read_pickle('data/merged_df.pkl')
     merged_df = merged_df[merged_df['entity_category'].isin(en_to_keep)]
-    merged_df['entity_bk'] = merged_df['entity']
+    # merged_df['entity_bk'] = merged_df['entity']
     merged_df['entity'] = merged_df['entity'].apply(lambda x: remove_char(remove_list, x))
     # merged_df['entity'] = merged_df['entity'].str.replace("/", "")
-
-    
-    df = []
-    df = merged_df.drop_duplicates(subset=['entity'], keep='first')
-
-    df['addV'] = "g.addV('" + df['entity_category'] + "').property('id','" + df['entity'] + "').property('entity_score','"+ df['entity_score'].astype(str) + "').property('sent_idx','"+ df.idx.astype(str) + "').property('en_idx','" + df.index.astype(str) + "').property('pk', 'pk')"
- 
     # merged_df['getV'] = "g.V().hasLabel('" + merged_df['entity_category'] + "').has('id','" + merged_df['entity'] + "')"
     merged_df['getV'] = "g.V().has('id','" + merged_df['entity'] + "')"
+    
+    df = []
+    # df = merged_df.drop_duplicates(subset=['entity'], keep='first')
+    # keep maximum value of entity score
+    df = merged_df.sort_values('entity_score', ascending=False).drop_duplicates('entity').sort_index()
+
+    df['addV'] = "g.addV('" + df['entity_category'] + "').property('id','" + df['entity'] + "').property('entity_score','"+ df['entity_score'].astype(str) + "').property('sent_idx','"+ df.idx.astype(str) + "').property('en_idx','" + df.index.astype(str) + "').property('pk', 'pk')"
+
+    # g.V().has('person','name','bill').tryNext().orElseGet{
+    # g.addV('person').property('name','bill').next()}
 
     _gremlin_insert_vertices = df['addV'].tolist()
     _gremlin_insert_edges = []

@@ -11,9 +11,6 @@ from azure.core.credentials import AzureKeyCredential
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
-# import nltk
-# nltk.download('punkt')
-
 import bisect
 import math
 
