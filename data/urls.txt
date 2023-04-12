@@ -2,3 +2,4 @@ https://www.microsoft.com/en-us/security/blog/microsoft-security-intelligence/
 https://www.crowdstrike.com/blog/category/threat-intel-research/
 https://www.trendmicro.com/en_us/research.html?category=trend-micro-research:threats/apt-and-targeted-attacks
 https://symantec-enterprise-blogs.security.com/blogs/threat-intelligence
+
