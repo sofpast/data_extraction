@@ -43,7 +43,7 @@ def cleanup_graph(client):
 
 def insert_vertices(client):
     for query in _gremlin_insert_vertices:
-        print("\n> {0}\n".format(query))df
+        print("\n> {0}\n".format(query))
         callback = client.submitAsync(query)
         if callback.result() is not None:
             print("\tInserted this vertex:\n\t{0}".format(

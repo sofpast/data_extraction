@@ -29,7 +29,7 @@ nlp = spacy.load('en_core_web_sm')
 
 merged_df = pd.DataFrame()
 
-with open ('data/articles_urls.text', 'r') as url_file:
+with open ('data/articles_urls.txt', 'r') as url_file:
     for line in url_file:
 
         url = line.strip()
