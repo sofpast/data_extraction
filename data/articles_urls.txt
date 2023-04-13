@@ -16,4 +16,3 @@ https://www.trendmicro.com/en_us/research/23/c/information-on-attacks-involving-
 https://www.trendmicro.com/en_us/research/23/c/ics-ot-cybersecurity-2022-txone-annual-report-insights.html
 https://www.trendmicro.com/en_us/research/23/c/azure-serverless-security-risks.html
 https://www.trendmicro.com/en_us/research/23/c/new-opcjacker-malware-distributed-via-fake-vpn-malvertising.html
-https://www.trendmicro.com/en_us/research/23/c/earth-preta-cyberespionage-campaign-hits-over-200.html

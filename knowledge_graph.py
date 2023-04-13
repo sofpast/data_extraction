@@ -41,7 +41,7 @@ def cleanup_graph(client):
     print("\n")
 
 
-def insert_vertices(client):
+def insert_vertices(client, _gremlin_insert_vertices):
     for query in _gremlin_insert_vertices:
         print("\n> {0}\n".format(query))
         callback = client.submitAsync(query)
@@ -57,7 +57,7 @@ def insert_vertices(client):
     print("\n")
 
 
-def insert_edges(client):
+def insert_edges(client, _gremlin_insert_edges):
 
     for query in _gremlin_insert_edges:
         print("\n> {0}\n".format(query))

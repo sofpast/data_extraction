@@ -11,9 +11,6 @@ from azure.core.credentials import AzureKeyCredential
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
-# import nltk
-# nltk.download('punkt')
-
 import bisect
 import math
 
@@ -95,7 +92,7 @@ def extract_entity(sent_text):
     return entities_df
 
 def merge_en_rel(entities_df, relations_df):
-# Merged entities and relations
+    # Merged entities and relations
     for id, row in relations_df.iterrows():
         sub = entities_df[entities_df['idx']==id].reset_index(drop=True)
         start_idx = get_lower_bound(sub.entity_offset.tolist(), row['offset'])

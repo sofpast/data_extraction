@@ -28,6 +28,8 @@ try:
     remove_list = ["*", "/", "&"]
     
     merged_df = pd.read_pickle('data/merged_df.pkl')
+    # import pdb
+    # pdb.set_trace()
     merged_df = merged_df[merged_df['entity_category'].isin(en_to_keep)]
     merged_df['entity'] = merged_df['entity'].apply(lambda x: remove_char(remove_list, x))
     merged_df['getV'] = "g.V().has('id','" + merged_df['entity'] + "')"
@@ -35,10 +37,7 @@ try:
     df = []
     # keep maximum value of entity score
     df = merged_df.sort_values('entity_score', ascending=False).drop_duplicates('entity').sort_index()
-
     df['addV_'] = "addV('" + df['entity_category'] + "').property('id','" + df['entity'] + "').property('entity_score','"+ df['entity_score'].astype(str) + "').property('sent_idx','"+ df.idx.astype(str) + "').property('en_idx','" + df.index.astype(str) + "').property('pk', 'pk')"
-
-    # insert only when doesn't exist
     df['addV'] = df['getV'] + ".fold().coalesce(unfold()," + df['addV_'] + ")"
 
     _gremlin_insert_vertices = df['addV'].tolist()
@@ -46,11 +45,10 @@ try:
 
     # Insert all vertices
     input("Let's insert some vertices into the graph. Press any key to continue...")
-    # insert_vertices(client)
+    insert_vertices(client, _gremlin_insert_vertices)
 
     # check if edge is exist
-    for idx, row in merged_df.iterrows():
-        
+    for idx, row in merged_df.iterrows():        
         sub = merged_df[(merged_df.idx==idx) & (~merged_df['offset'].isnull())]
         if sub[sub['is_source']=="Y"].shape[0] > 0:
             getV_list = sub['getV'].tolist()
@@ -60,16 +58,14 @@ try:
                 getE_cmd = getV_list[0] + ".outE('" + relation + "').as('e').inV()." + getV_list[i][6:] + ".select('e')"
                 addE_cmd = getV_list[0] + ".addE('" + relation + "').to(" + getV_list[i] + ")"
                 addE = getE_cmd + ".fold().coalesce(unfold()," + addE_cmd + ")"
-                print(addE)
-                _gremlin_insert_edges.append(addE)
-  
+                _gremlin_insert_edges.append(addE)  
         else:
             continue
  
 
     # Create edges between vertices
     input("Now, let's add some edges between the vertices. Press any key to continue...")
-    # insert_edges(client)
+    insert_edges(client, _gremlin_insert_edges)
 
     # Count all vertices
     input("Okay. Let's count how many vertices we have. Press any key to continue...")
