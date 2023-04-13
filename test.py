@@ -51,9 +51,7 @@ with open ('data/articles_urls.txt', 'r') as url_file:
 
         merged_df = pd.concat([merged_df, entities_df.merge(relations_df, on='has_rel', how='left')], ignore_index=True, sort=False)
 
-
-import pdb
-pdb.set_trace()
+merged_df.to_pickle('data/merged_df.pkl')
 
     
 
