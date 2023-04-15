@@ -32,8 +32,6 @@ main_urls_path = config.main_urls_path
 existing_urls_path = config.existing_urls_path
 en_to_keep = config.en_to_keep
 
-
-
 if __name__ == "__main__":
     merged_df = pd.DataFrame()   
     new_urls = get_new_urls(existing_urls_path
