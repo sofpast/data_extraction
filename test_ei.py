@@ -9,14 +9,35 @@ from web_scrape import *
 from bs4 import BeautifulSoup
 import requests
 
+from fake_useragent import UserAgent
+# import requests
+   
 # url = "https://www.microsoft.com/en-us/security/blog/2023/03/17/killnet-and-affiliate-hacktivist-groups-targeting-healthcare-with-ddos-attacks/"
 # url = "https://www.microsoft.com/en-us/security/blog/2023/04/07/mercury-and-dev-1084-destructive-attack-on-hybrid-environment/"
 
-url = "https://en.wikipedia.org/wiki/Russian_Empire"
+# url = "https://www.microsoft.com/en-us/security/blog/2023/04/06/devops-threat-matrix/"
+# url = "https://www.microsoft.com/en-us/security/blog/2021/02/18/forrester-consulting-tei-study-azure-security-center-delivers-219-percent-roi-over-3-years-and-a-payback-of-less-than-6-months/"
+url = "https://en.wikipedia.org/wiki/Knowledge_graph#:~:text=Knowledge%20graphs%20are%20often%20used,semantics%20underlying%20the%20used%20terminology."
+
 
 nlp = spacy.load('en_core_web_sm')
 
-htmldata = getdata(url)
+# htmldata = getdata(url)
+# headers = {
+#     'User-Agent': 'My User Agent 1.0',
+#     'From': 'pjamjin@gmail.com'  # This is another valid field
+# }
+ua = UserAgent()
+print(ua.chrome)
+headers = {'User-Agent':str(ua.chrome)}
+print(headers)
+
+# headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
+
+htmldata = getdata(url, headers=headers)
+
+# response = requests.get(url, headers=headers)
+
 soup = BeautifulSoup(htmldata, 'html.parser')
 text = []
 
@@ -24,8 +45,8 @@ for para in soup.find_all("p"):
     print(para.get_text())
     text.append(para.get_text())
 documents = ''.join(str(x) for x in text)
-# import pdb
-# pdb.set_trace()
+import pdb
+pdb.set_trace()
 sent_text = [i for i in nlp(documents).sents]
 # sent_text = scrape_web(url, nlp)
 

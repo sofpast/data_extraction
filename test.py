@@ -24,6 +24,7 @@ from spacy.tokens import Span
 from web_scrape import *
 from relation_extractor import *
 from config import config
+from fake_useragent import UserAgent
 
 nlp = spacy.load('en_core_web_sm')
 
@@ -32,15 +33,27 @@ main_urls_path = config.main_urls_path
 existing_urls_path = config.existing_urls_path
 en_to_keep = config.en_to_keep
 
+ua = UserAgent()
+print(ua.chrome)
+headers = {'User-Agent':str(ua.chrome)}
+print(headers)
+
 if __name__ == "__main__":
     merged_df = pd.DataFrame()   
-    new_urls = get_new_urls(existing_urls_path
-                            , main_urls_path, words2check)
+    # new_urls = get_new_urls(existing_urls_path
+    #                         , main_urls_path, words2check)
+    new_urls = ["https://symantec-enterprise-blogs.security.com/blogs/threat-intelligence/mantis-palestinian-attacks"]
 
     if len(new_urls) > 0:
         for line in new_urls:
-            url = line.strip()
-            sent_text = scrape_web(url, nlp)
+            # url = line.strip()
+            url = line
+            sent_text = scrape_web(url, nlp, headers)
+            with open('data/tmp/sent_text.txt', 'w') as f:
+                for line in sent_text:
+                    f.write(f"{line}\n")
+            import pdb
+            pdb.set_trace()
             # Extract entities
             entities_df = extract_entity(sent_text)
             entities_df[['has_rel', 'is_source']] = ""
@@ -52,7 +65,7 @@ if __name__ == "__main__":
             entities_df, relations_df = merge_en_rel(entities_df, relations_df)
             merged_df = pd.concat([merged_df, entities_df.merge(relations_df, on='has_rel', how='left')], ignore_index=True, sort=False)
 
-        merged_df.to_pickle('data/merged_df.pkl')
+        merged_df.to_pickle('data/new_merged_df.pkl')
 
     
 

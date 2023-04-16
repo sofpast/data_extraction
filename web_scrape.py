@@ -24,12 +24,12 @@ from config import config
 
 
 # link for extract html data
-def getdata(url):
-	r = requests.get(url)
+def getdata(url, headers):
+	r = requests.get(url, headers)
 	return r.text
 
-def scrape_web(url, nlp):
-    htmldata = getdata(url)
+def scrape_web(url, nlp, headers):
+    htmldata = getdata(url, headers)
     soup = BeautifulSoup(htmldata, 'html.parser')
     text = []
 
