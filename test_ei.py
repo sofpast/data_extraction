@@ -10,68 +10,65 @@ from bs4 import BeautifulSoup
 import requests
 
 from fake_useragent import UserAgent
-# import requests
-   
-# url = "https://www.microsoft.com/en-us/security/blog/2023/03/17/killnet-and-affiliate-hacktivist-groups-targeting-healthcare-with-ddos-attacks/"
-# url = "https://www.microsoft.com/en-us/security/blog/2023/04/07/mercury-and-dev-1084-destructive-attack-on-hybrid-environment/"
-
-# url = "https://www.microsoft.com/en-us/security/blog/2023/04/06/devops-threat-matrix/"
-# url = "https://www.microsoft.com/en-us/security/blog/2021/02/18/forrester-consulting-tei-study-azure-security-center-delivers-219-percent-roi-over-3-years-and-a-payback-of-less-than-6-months/"
-url = "https://en.wikipedia.org/wiki/Knowledge_graph#:~:text=Knowledge%20graphs%20are%20often%20used,semantics%20underlying%20the%20used%20terminology."
 
 
 nlp = spacy.load('en_core_web_sm')
 
-# htmldata = getdata(url)
-# headers = {
-#     'User-Agent': 'My User Agent 1.0',
-#     'From': 'pjamjin@gmail.com'  # This is another valid field
-# }
-ua = UserAgent()
-print(ua.chrome)
-headers = {'User-Agent':str(ua.chrome)}
-print(headers)
-
-# headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
-
-htmldata = getdata(url, headers=headers)
-
-# response = requests.get(url, headers=headers)
-
-soup = BeautifulSoup(htmldata, 'html.parser')
-text = []
-
-for para in soup.find_all("p"):
-    print(para.get_text())
-    text.append(para.get_text())
-documents = ''.join(str(x) for x in text)
-import pdb
-pdb.set_trace()
+sentences = []
+sent_text = []
+with open('data/tmp/sent_text.txt', 'r') as f:
+    for line in f:
+        sentences.append(line.strip())
+# nlp = spacy.load('en_core_web_sm')
+documents = ''.join(str(x) for x in sentences)
 sent_text = [i for i in nlp(documents).sents]
-# sent_text = scrape_web(url, nlp)
 
 properties = {
     'openie.affinity_probability_cap': 2 / 3,
 }
+# triple_list = []
+# with StanfordOpenIE(properties=properties) as client:
+#     # text = 'Barack Obama was born in Hawaii. Richard Manning wrote this sentence.'
+#     for idx, sent in enumerate(sent_text):
+#         sub_triple = []
+#         text = str(sent)
+#         print('Text: %s.' % text)
+#         for triple in client.annotate(text):
+#             print('|-', triple)
+#             sub_triple.append(triple)
+#         triple_list.append(sub_triple)
 
-with StanfordOpenIE(properties=properties) as client:
-    # text = 'Barack Obama was born in Hawaii. Richard Manning wrote this sentence.'
+# triple_df = pd.DataFrame()
+# for idx, sub in enumerate(triple_list):
+#     df = pd.DataFrame(sub)
+#     df['idx'] = idx
+#     triple_df = pd.concat([triple_df, df], ignore_index=True, sort=False)
 
-    text = str(sent_text[0])
-    print('Text: %s.' % text)
-    for triple in client.annotate(text):
-        print('|-', triple)
+# triple_df.groupby('idx', as_index=False).agg({'subject': lambda x: x.tolist(), 'relation': lambda x: x.tolist(), 'object': lambda x: x.tolist()})
 
-    # graph_image = 'graph.png'
-    # client.generate_graphviz_graph(text, graph_image)
-    # print('Graph generated: %s.' % graph_image)
+triple_df = pd.read_pickle('data/tmp/triple_df.pkl')
+entities_df = pd.read_pickle('data/tmp/entities_df.pkl')
+entities_df['subject'] = entities_df['entity']
+subject_df = pd.merge(entities_df, triple_df, how='left', on =['idx', 'subject'])
+idx_lst = subject_df[~subject_df.relation.isnull()]['idx'].unique().tolist()
 
-    # with open('corpus/pg6130.txt', encoding='utf8') as r:
-    #     corpus = r.read().replace('\n', ' ').replace('\r', '')
 
-    # triples_corpus = client.annotate(corpus[0:5000])
-    # print('Corpus: %s [...].' % corpus[0:80])
-    # print('Found %s triples in the corpus.' % len(triples_corpus))
-    # for triple in triples_corpus[:3]:
-    #     print('|-', triple)
-    # print('[...]')
+def find_objects(text, en_lst):
+    en_obj_lst = []
+    for en in en_lst:
+        if en in text:
+            en_obj_lst.append(en)
+    # en_obj_lst = [en if en in text for en in en_lst]  
+    return en_obj_lst
+en_rel_df = pd.DataFrame()
+for idx in idx_lst:
+    sub = subject_df[subject_df.idx==idx]
+    en_lst = sub[sub['relation'].isnull()]['entity'].tolist()
+    sub['en_obj'] = sub['object'].astype(str).apply(lambda x: find_objects(x, en_lst))
+    en_rel_df = pd.concat([en_rel_df, sub])
+en_rel_df = en_rel_df[(~en_rel_df.relation.isnull())&(en_rel_df['en_obj'].str.len()!=0)][['idx','subject', 'relation', 'en_obj']] 
+en_rel_df = en_rel_df.explode('en_obj').drop_duplicates().reset_index(drop=True)
+
+
+import pdb
+pdb.set_trace()

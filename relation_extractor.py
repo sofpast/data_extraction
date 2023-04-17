@@ -110,3 +110,24 @@ def remove_char(remove_list, text):
     for char in remove_list:
         text = text.replace(char, "")
     return text
+
+def find_subjects(parsed_text):
+    subject_list = []
+    object_list = []
+    #get token dependencies
+    for text in parsed_text:
+        #subject would be
+        if text.dep_ == "nsubj":
+            subject = text.orth_
+            subject_list.append(subject)
+            print(f"subject: {subject}")
+        #iobj for indirect object
+        if text.dep_ == "iobj":
+            indirect_object = text.orth_
+            print(f"indirect object: {indirect_object}")
+        #dobj for direct object
+        if text.dep_ == "dobj":
+            direct_object = text.orth_
+            print(f"direct object: {direct_object}")
+            object_list.append(direct_object)
+    return subject_list, object_list

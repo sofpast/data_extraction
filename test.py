@@ -48,20 +48,37 @@ if __name__ == "__main__":
         for line in new_urls:
             # url = line.strip()
             url = line
-            sent_text = scrape_web(url, nlp, headers)
-            with open('data/tmp/sent_text.txt', 'w') as f:
-                for line in sent_text:
-                    f.write(f"{line}\n")
+            # sent_text = scrape_web(url, nlp, headers)
+            # with open('data/tmp/sent_text.txt', 'w') as f:
+            #     for line in sent_text:
+            #         f.write(f"{line}\n")
+
+            sentences = []
+            sent_text = []
+            with open('data/tmp/sent_text.txt', 'r') as f:
+                for line in f:
+                    sentences.append(line.strip())
+            # nlp = spacy.load('en_core_web_sm')
+            documents = ''.join(str(x) for x in sentences)
+            sent_text = [i for i in nlp(documents).sents]
             import pdb
             pdb.set_trace()
             # Extract entities
-            entities_df = extract_entity(sent_text)
+            # entities_df = extract_entity(sent_text)
+            entities_df = pd.read_pickle('data/tmp/entities_df.pkl')
             entities_df[['has_rel', 'is_source']] = ""
             entities_df = entities_df[entities_df['entity_category'].isin(en_to_keep)]
             # Extract relations
             relations = [[idx, get_relation(str(sentence), nlp)] for idx, sentence in enumerate(sent_text)]
             relations_df = pd.DataFrame(relations, columns=['has_rel', 'relations']).reset_index(drop=True)
             relations_df[['relation', 'offset']] = pd.DataFrame(relations_df['relations'].tolist(), index=relations_df.index)
+
+            sub_objs = [[idx, find_subjects(sentence)] for idx, sentence in enumerate(sent_text)]
+            sub_objs_df = pd.DataFrame(sub_objs, columns=['idx', 'sub_objs']).reset_index(drop=True)
+            sub_objs_df[['subjects', 'objects']] = pd.DataFrame(sub_objs_df['sub_objs'].tolist(), index=sub_objs_df.index)
+
+            # entities_df[['idx', 'entity']].groupby('idx', as_index=False).agg({'entity': lambda x: x.tolist()}).to_csv('data/tmp/entities_df.csv')
+
             entities_df, relations_df = merge_en_rel(entities_df, relations_df)
             merged_df = pd.concat([merged_df, entities_df.merge(relations_df, on='has_rel', how='left')], ignore_index=True, sort=False)
 

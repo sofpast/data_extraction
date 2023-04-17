@@ -22,6 +22,9 @@ _gremlin_count_vertices = "g.V().count()"
 #     "Get all values that key is befund": "g.V().hasLabel('key').has('content', containing('efund')).out('knows').hasLabel('value').values('content')"
 # }
 
+# g.V().hasLabel('Organization').values('id')
+# Haaretz, Organization, phishing
+
 # _gremlin_drop_operations = {
 #     "Drop Edge - Thomas no longer knows Mary": "g.V('thomas').outE('knows').where(inV().has('id', 'mary')).drop()",
 #     "Drop Vertex - Drop Thomas": "g.V('thomas').drop()"
