@@ -58,8 +58,9 @@ def find_objects(text, en_lst):
     for en in en_lst:
         if en in text:
             en_obj_lst.append(en)
-    # en_obj_lst = [en if en in text for en in en_lst]  
+
     return en_obj_lst
+    
 en_rel_df = pd.DataFrame()
 for idx in idx_lst:
     sub = subject_df[subject_df.idx==idx]
