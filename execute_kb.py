@@ -32,12 +32,13 @@ try:
     # pdb.set_trace()
     merged_df = merged_df[merged_df['entity_category'].isin(en_to_keep)]
     merged_df['entity'] = merged_df['entity'].apply(lambda x: remove_char(remove_list, x))
+    
     merged_df['getV'] = "g.V().has('id','" + merged_df['entity'] + "')"
     
     df = []
     # keep maximum value of entity score
     df = merged_df.sort_values('entity_score', ascending=False).drop_duplicates('entity').sort_index()
-    df['addV_'] = "addV('" + df['entity_category'] + "').property('id','" + df['entity'] + "').property('entity_score','"+ df['entity_score'].astype(str) + "').property('sent_idx','"+ df.idx.astype(str) + "').property('en_idx','" + df.index.astype(str) + "').property('pk', 'pk')"
+    df['addV_'] = "addV('" + df['entity_category'] + "').property('id','" + df['entity'] + "').property('entity_score','"+ df['entity_score'].astype(str) + "').property('pk', 'pk')"
     df['addV'] = df['getV'] + ".fold().coalesce(unfold()," + df['addV_'] + ")"
 
     _gremlin_insert_vertices = df['addV'].tolist()
@@ -61,7 +62,13 @@ try:
                 _gremlin_insert_edges.append(addE)  
         else:
             continue
- 
+    # _gremlin_traversals = {
+    #     "Get all values that containing 2022": "g.V().hasLabel('value').has('content', containing('2022')).values()",
+    #     "Get all key that were extracted from xNER": "g.V().hasLabel('key').has('key_bbox', '[]')",
+    #     "Get all values of key extracted by xNER": "g.V().hasLabel('key').has('key_bbox', '[]').out('knows').hasLabel('value').values('content')",
+    #     "Get all values of key that contain 'am'": "g.V().hasLabel('key').has('content', containing('am')).out('knows').hasLabel('value').values('content') ",
+    #     "Get all values that key is befund": "g.V().hasLabel('key').has('content', containing('efund')).out('knows').hasLabel('value').values('content')"
+    # }
 
     # Create edges between vertices
     input("Now, let's add some edges between the vertices. Press any key to continue...")

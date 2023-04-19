@@ -23,6 +23,7 @@ from spacy.tokens import Span
 
 from web_scrape import *
 from config import config
+from openie import StanfordOpenIE
 
 
 def get_relation(sent, nlp):
@@ -131,3 +132,27 @@ def find_subjects(parsed_text):
             print(f"direct object: {direct_object}")
             object_list.append(direct_object)
     return subject_list, object_list
+
+def get_triple(sent_text):
+    triple_list = []
+    triple_df = pd.DataFrame()
+    properties = {'openie.affinity_probability_cap': 2 / 3,}
+
+    with StanfordOpenIE(properties=properties) as client:
+        for idx, sent in enumerate(sent_text):
+            sub_triple = []
+            text = str(sent)
+            print('Text: %s.' % text)
+            for triple in client.annotate(text):
+                print('|-', triple)
+                sub_triple.append(triple)
+            triple_list.append(sub_triple)
+
+    for idx, sub in enumerate(triple_list):
+        df = pd.DataFrame(sub)
+        df['idx'] = idx
+        triple_df = pd.concat([triple_df, df], ignore_index=True, sort=False)
+
+    # triple_df.groupby('idx', as_index=False).agg({'subject': lambda x: x.tolist(), 'relation': lambda x: x.tolist(), 'object': lambda x: x.tolist()})
+
+    return triple_df

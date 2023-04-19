@@ -41,14 +41,23 @@ def scrape_web(url, nlp, headers):
     sent_text = [i for i in nlp(documents).sents]
 
     return sent_text
-
-def get_new_urls(existing_urls_path, main_urls_path, words2check):
+def get_existing_urls(existing_urls_path):
     existing_urls = []
-    new_urls = []
-
+ 
     with open(existing_urls_path, 'r') as urls_file:
         for line in urls_file:
             existing_urls.append(line.strip())
+
+    return existing_urls
+   
+def get_new_urls(existing_urls_path, main_urls_path, words2check):
+    
+    new_urls = []
+    existing_urls = get_existing_urls(existing_urls_path)
+
+    # with open(existing_urls_path, 'r') as urls_file:
+    #     for line in urls_file:
+    #         existing_urls.append(line.strip())
 
     with open(existing_urls_path, "a+") as f:
         with open (main_urls_path, 'r') as main_urls:
