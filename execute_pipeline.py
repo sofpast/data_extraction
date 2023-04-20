@@ -2,8 +2,8 @@ import asyncio
 import glob
 import sys
 import traceback
-
 import warnings
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 import numpy as np
@@ -20,10 +20,8 @@ from knowledge_graph import *
 from relation_extractor import *
 from web_scrape import *
 
+# load spacy
 nlp = spacy.load('en_core_web_sm')
-
-# words2check = config.words2check
-# main_urls_path = config.main_urls_path
 
 # headers to pass security check
 ua = UserAgent()
@@ -33,7 +31,6 @@ def extract_vertice_edges(existing_urls_path, en_to_keep, special_chars):
     # Gremlin queries
     _gremlin_insert_vertices = _gremlin_insert_edges = []
     entities_df = triple_df = pd.DataFrame()
-
     # open urls
     existing_urls = get_existing_urls(existing_urls_path)
 
@@ -43,13 +40,13 @@ def extract_vertice_edges(existing_urls_path, en_to_keep, special_chars):
         triple_df = get_triple(sent_text)
         
         # extract entities
-        # entities_df = extract_entity(sent_text)
-        entities_df = pd.read_pickle('data/tmp/en3/en3.pkl')
+        entities_df = extract_entity(sent_text)
+        # entities_df = pd.read_pickle('data/tmp/en3/en3.pkl')
 
         if triple_df.shape[0] > 0 and entities_df.shape[0] > 0:
             entities_df = entities_df[entities_df['entity_category'].isin(en_to_keep)]
             entities_df['entity'] = entities_df['entity'].apply(lambda x: remove_char(special_chars, x))
-            entities_df = entities_df.sort_values('entity_score', ascending=False).drop_duplicates('entity').sort_index()
+            # entities_df = entities_df.sort_values('entity_score', ascending=False).drop_duplicates('entity').sort_index()
             entities_df['subject'] = entities_df['entity']
             subject_df = pd.merge(entities_df, triple_df, how='left', on =['idx', 'subject'])
             idx_lst = subject_df[~subject_df.relation.isnull()]['idx'].unique().tolist()
@@ -108,7 +105,6 @@ if __name__ == "__main__":
             insert_edges(client, _gremlin_insert_edges)
 
         # Count all vertices
-        # print("Count how many vertices")
         count_vertices(client)
 
     except GremlinServerError as e:

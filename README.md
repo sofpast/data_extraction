@@ -1,11 +1,13 @@
 # Introduction 
-The project aims to create a database called `threat-actor` to represent the interconnection among `threat actors` from information extracted from intelligent security blogs/ articles.
+The project aims to create a database named `threat-actor` to represent the interconnection among `threat actors` from information extracted from online intelligent security blogs/ articles.
 
-The project includes 3 main steps:
+* A solution for BAE Systems problem 1
+
+The project includes four main steps:
 1. Scrape data from articles by using `Beautifulsoup`
 2. Extract entities from extracted paragraphs by using `Azure Text Analytics Prebuilt Model`
-3. Extract the relations between pairs of two entities by using extracting triple from `Stanford Openie`
-4. Build knowledge by using `Gremlin` queries and storing to `Azure Cosmos DB`
+3. Extract relations between pairs of two entities by using triple extraction from `Stanford Openie`
+4. Build knowledge by using `Gremlin` queries and storing the vertex and edges into `Azure Cosmos DB`
 
 Project Structure
 ---------------------------------
@@ -18,15 +20,15 @@ data_extraction/
 │
 ├── data/                                       <- Data folder
 │   ├── input/                                  <- Input data folder
-│   │   ├── articles_urls.txt                   <- Articles' urls
+│   │   ├── articles_urls.txt                   <- Articles' urls to scrape
 │   │   └── urls.txt                            <- Contain 4 main urls to crawl data automatically
 │
-├── samples/                                    <- Knowledge Graph Sample
-│   └── kb.PNG                                  <- Knowledge Graph Sample
+├── samples/                                    <- Knowledge graph samples
+│   └── kb.PNG                                  <- Knowledge graph outputed from the program
 │
 ├── .gitignore
 ├── README.md                                   <- README for inference
-├── execute_pipeline.py                         <- Execute main pipeline from web scrape to extract entities/ relation and insert into DB
+├── execute_pipeline.py                         <- Execute main pipeline
 ├── knowledge_graph.py                          <- Knowledge graph queries
 ├── relation_extractor.py                       <- Entities and relation extraction
 ├── requirements.txt                            <- Package requirements
@@ -37,10 +39,11 @@ data_extraction/
 # Getting Started
 
 ## Package requirement
->- Python 3.8.16
+>- python==3.8.16
 >- azure-ai-textanalytics==5.2.1
 >- gremlinpython==3.4.13
 >- spacy==3.5.1
+>- stanford_openie==1.3.1
 
 ## Installation process
 First, create an Anaconda environment then install the environment by using `requirements.txt` and other packages as the commands below.
@@ -68,12 +71,12 @@ pip install -U spacy
 python -m spacy download en_core_web_sm
 ```
 * Install stanford_openie
-`stanford_openie` is used to extract a triple (subject-verb-object) from a sentence, this is an important step to find the relation between two entities. The installation of stanford_openie would be done by using `pip install stanford_openie` version specified in `requirement.txt` but you need to ensure that Java JDK is already installed in your computer.
+`stanford_openie` is used to extract a triple (subject-verb-object) from a sentence, this is an important step to find the relation between two entities. The installation of stanford_openie could be done by using `pip install stanford_openie` or with the certain version specified in `requirement.txt`. One thing to notice that it requires Java JDK installed in your computer.
 
 To check and install JDK version, please access to the link: [Download JDK](https://www.oracle.com/java/technologies/downloads/)
 
 # Run the pipeline
-In the `config.py`, you need to replace your own services key, credential to access to `Azure Text Analytics` and `Cosmos DB`.
+1. First, in the `config.py`, you need to replace your own services key, credentials to access to `Azure Text Analytics` and `Cosmos DB`.
 
 ```
 # Credentials to language services
@@ -86,21 +89,22 @@ COSMOSDB_USERNAME = YOUR_COSMOSDB_USERNAME
 COSMOSDB_PASSWORD = YOUR_COSMOSDB_PASSWORD
 ```
 
-Use the command below to run the inference
+2. Second, use the command below to run the the pipeline
 ```bash
 python execute_pipeline.py
 ```
 
-After run the query, access to the cosmosdb, you can query data by using Gremlin or query by interact in UI. The output will look as below:
+This will trigger from scaping blog/ articles' contents that are specified in `data/input/articles_urls.txt`, then extract entities and relations until preparing Gremlin queries for `_gremlin_insert_verties` and `_gremlin_insert_edges` into the Cosmos DB. if sucessfully, the terminal will display number of vertices and edges to insert into Cosmos DB as below:
+```
+Connect to Azure Cosmos DB + Gremlin on Python!
+Drop graph is on the server...
+Number of vertices to insert into the graph: 46
+Number of edges to insert into the graph: 4
+        Count of vertices: [135]
+```
+You can query data by using Gremlin or query by interacting in UI. The output will look as below:
 <img src="samples/kb.png" width="800" height="400">
 
-# Model Architectures
-The project contains 3 models as below:
-- Model 1 - Semantic/ Name Entity Recognition (SER/NER): to classify texts into 4 classes including (OTHER, HEADER, QUESTION, ANSWER) --> final outputs of SER/NER is a list of entities (QUESTION, ANSWER). It was based on [LayoutXLM Hunggingface transformers](https://huggingface.co/docs/transformers/model_doc/layoutxlm) by Microsoft 
-
-- Model 2 - Relation Extraction (REL): to classify the relation between every pair of question/ answer (None or KV), it is a machine learning model by using RandomForest
-
-- Model 3 - extraNER: use pre-trained model to extract some basic classes from the entities ANSWER
-
-Path to those models are listed in `configs.py`
+# Solution Architectures
+TO be updated
 

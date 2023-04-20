@@ -1,32 +1,26 @@
-import csv
-import os
-import os.path
-import time
-
-import nltk
-import pandas as pd
-import requests
-from azure.ai.textanalytics import TextAnalyticsClient
-from azure.core.credentials import AzureKeyCredential
-from bs4 import BeautifulSoup
-from dotenv import load_dotenv
-
 import bisect
 import math
 
 import numpy as np
+import pandas as pd
+import requests
 import spacy
-import tqdm
+from azure.ai.textanalytics import TextAnalyticsClient
+from azure.core.credentials import AzureKeyCredential
+from bs4 import BeautifulSoup
+from openie import StanfordOpenIE
 from spacy.lang.en import English
 from spacy.matcher import Matcher
 from spacy.tokens import Span
 
-from web_scrape import *
 from config import config
-from openie import StanfordOpenIE
+from web_scrape import *
 
 
 def get_relation(sent, nlp):
+    """
+    extract relation by using spacy Matcher
+    """
     doc = nlp(sent)
     
     # Matcher class object 
@@ -74,13 +68,9 @@ def extract_entity(sent_text):
 
             for doc in result:
                 for entity in doc.entities:
-                    # print(f"Entity: {entity.text}")
                     etext_list.append(entity.text)
-                    # print(f"...Category: {entity.category}")
                     ecategory_list.append(entity.category)
-                    # print(f"...Confidence Score: {entity.confidence_score}")
                     econfi_score_list.append(entity.confidence_score)
-                    # print(f"...Offset: {entity.offset}")
                     eoffset_list.append(entity.offset)
                     idx_list.append(idx)
 
@@ -133,6 +123,8 @@ def find_subjects(parsed_text):
     return subject_list, object_list
 
 def get_triple(sent_text):
+    """get triple by using stanford_openie
+    """    
     triple_list = []
     triple_df = pd.DataFrame()
     properties = {'openie.affinity_probability_cap': 2 / 3,}
@@ -151,7 +143,5 @@ def get_triple(sent_text):
         df = pd.DataFrame(sub)
         df['idx'] = idx
         triple_df = pd.concat([triple_df, df], ignore_index=True, sort=False)
-
-    # triple_df.groupby('idx', as_index=False).agg({'subject': lambda x: x.tolist(), 'relation': lambda x: x.tolist(), 'object': lambda x: x.tolist()})
-
+        
     return triple_df
