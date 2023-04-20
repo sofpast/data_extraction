@@ -1,41 +1,37 @@
 # Introduction 
-The project aims to (TBD)
+The project aims to create a database called `threat-actor` to represent the interconnection among `threat actors` from information extracted from intelligent security blogs/ articles.
 
-Project Structure (to be updated)
+The project includes 3 main steps:
+1. Scrape data from articles by using `Beautifulsoup`
+2. Extract entities from extracted paragraphs by using `Azure Text Analytics Prebuilt Model`
+3. Extract the relations between pairs of two entities by using extracting triple from `Stanford Openie`
+4. Build knowledge by using `Gremlin` queries and storing to `Azure Cosmos DB`
+
+Project Structure
 ---------------------------------
 ```text
-./
-├── models/                                     <- Models in the project
-│   ├── extraNer/                               <- Extra NER model class
-│   │	└── flair_ner.py
-│   │
-│   ├── layoutlmft/                             <- LayoutXLM class
-│   │   └── models/
-│   │       ├── layoutlm/
-│   │       ├── layoutlmv2/
-│   │       ├── layoutxlm/
-│   │		└── model_args.py
-│   │
-│   ├── relationml/                             <- Relation Model class
-│   │   └── rel.py
-│   │
-│   ├── weights/                                <- Weights/ trained models
-│   │   ├── extra_ner/
-│   │   ├── ner/
-│   │   └── rel/
-│   │
-│   ├── configs.py                              <- Configuration 
-│   ├── logger.py                               <- Define which log level will be printed 
-│   ├── predict_extra_ner.py                    <- Inference source code of extra NER
-│   ├── predict_ner.py                          <- Inference source code of LayoutXLM NER
-│   ├── predict_rel.py                          <- Inference source code of Relation Model
-│   ├── processor.py                            <- Inference source code of processor to encode images by using tokenizer
-│   └── utils.py                                <- Auxiliary functions
-│   
-├── predict_kv.py                               <- Inference source code
+data_extraction/
+│
+├── config/                                     <- Configuration
+│   ├── __init__.py
+│   └── config.py                               <- Configuration file
+│
+├── data/                                       <- Data folder
+│   ├── input/                                  <- Input data folder
+│   │   ├── articles_urls.txt                   <- Articles' urls
+│   │   └── urls.txt                            <- Contain 4 main urls to crawl data automatically
+│
+├── samples/                                    <- Knowledge Graph Sample
+│   └── kb.PNG                                  <- Knowledge Graph Sample
+│
+├── .gitignore
 ├── README.md                                   <- README for inference
-|── RELEASE_NOTES.md                            <- Release notes
-└── requirements.txt                            <- Package requirements
+├── execute_pipeline.py                         <- Execute main pipeline from web scrape to extract entities/ relation and insert into DB
+├── knowledge_graph.py                          <- Knowledge graph queries
+├── relation_extractor.py                       <- Entities and relation extraction
+├── requirements.txt                            <- Package requirements
+├── test.py                                     <- Testing (Implementing)
+└── web_scrape.py                               <- Web scraping
 ```
 
 # Getting Started
@@ -76,42 +72,27 @@ python -m spacy download en_core_web_sm
 
 To check and install JDK version, please access to the link: [Download JDK](https://www.oracle.com/java/technologies/downloads/)
 
-4. Download the weights
-  - ner_weight (models/weights/ner): LayoutXLM NER model weights and others required by tokenizer
-  - rel_weight (models/weights/rel): Relation extraction model weights and scaler
-  - extraNER_weight (models/weights): extraNER model weights
+# Run the pipeline
+In the `config.py`, you need to replace your own services key, credential to access to `Azure Text Analytics` and `Cosmos DB`.
 
-Access here [link](https://eastgatesoftware.sharepoint.com/:u:/s/PROJECTACTINEOProject2/EcjaVwyiYVVFvaIj_gmV6NgBi-T4XkZuZnNCX5DS2MkqaQ) to download all the weights then place them into the folder `models`
+```
+# Credentials to language services
+LANGUAGE_SERVICE_KEY = YOUR_LANGUAGE_SERVICE_KEY
+LANGUAGE_SERVICE_ENDPOINT = YOUR_LANGUAGE_SERVICE_ENDPOINT
 
-# Run Inference
+# CosmosDB
+COSMOSDB_WWS = YOUR_COSMOSDB_WWS
+COSMOSDB_USERNAME = YOUR_COSMOSDB_USERNAME
+COSMOSDB_PASSWORD = YOUR_COSMOSDB_PASSWORD
+```
+
 Use the command below to run the inference
 ```bash
-python predict_kv.py --input_folder <path_to_input_folder> \
-                     --output_folder <path_to_output_folder> \
-                     --save_debug \
-                     --mode <"inference" or "eval">
+python execute_pipeline.py
 ```
 
-In which:
-- `--input_folder`: type=str, help="Path to input folder"
-- `--output_path`: type=str, help="Path to output folder"
-- `--save_debug`: action='store_true', help="Save debug output". If "--save_debug" is not selected, the default is FALSE.
-- `--mode`: type=str, default="inference", help="Run mode (inference/eval)". Mode is added to satisfy the input requirements of both inference and evaluation modes.
-
-Example:
-
-```bash
-# output debug and inference mode
-python predict_kv.py --input_folder data/test_unseen_v4 \
-                     --output_folder nhung/output_test_unseen_v4 \
-                     --save_debug \
-                     --mode inference
-
-# no debug and inference mode
-python predict_kv.py --input_folder data/test_unseen_v4 \
-                     --output_folder nhung/output_test_unseen_v4 \
-                     --mode eval
-```
+After run the query, access to the cosmosdb, you can query data by using Gremlin or query by interact in UI. The output will look as below:
+<img src="samples/kb.png" width="800" height="400">
 
 # Model Architectures
 The project contains 3 models as below:

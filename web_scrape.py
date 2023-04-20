@@ -34,7 +34,7 @@ def scrape_web(url, nlp, headers):
     text = []
 
     for para in soup.find_all("p"):
-        print(para.get_text())
+        # print(para.get_text())
         text.append(para.get_text())
 
     documents = ''.join(str(x) for x in text)
