@@ -1,11 +1,11 @@
 # Credentials to language services
-LANGUAGE_SERVICE_KEY = '188fe77ba5e440e9bef0a01842e6e38e'
-LANGUAGE_SERVICE_ENDPOINT = "https://hacklanguage.cognitiveservices.azure.com/"
+LANGUAGE_SERVICE_KEY = "YOUR_LANGUAGE_SERVICE_KEY"
+LANGUAGE_SERVICE_ENDPOINT = "YOUR_LANGUAGE_SERVICE_ENDPOINT"
 
 # CosmosDB
-COSMOSDB_WWS = "wss://cosmosdbhack.gremlin.cosmos.azure.com:443/"
-COSMOSDB_USERNAME = "/dbs/threatactor-database/colls/threatactor-graph"
-COSMOSDB_PASSWORD= "SHwb6lPjs2CzVvyFxp8bpALcY3oQQ2d7l9s9ydRCwtWJ7ywg5zP0Ka3Gl2LgGm4yYuR11JxNxYg9ACDbQfOMeg=="
+COSMOSDB_WWS = "YOUR_COSMOSDB_WWS"
+COSMOSDB_USERNAME = "YOUR_COSMOSDB_USERNAME"
+COSMOSDB_PASSWORD= "YOUR_COSMOSDB_PASSWORD"
 
 # Configuration for web scraping
 words2check = ["trendmicro.com/en_us/research", "microsoft.com/en-us/security/blog/2023", "threat-intel-research", "blogs/threat-intelligence"]
