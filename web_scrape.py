@@ -1,10 +1,11 @@
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
-
 import spacy
+from bs4 import BeautifulSoup
 from spacy.tokens import Span
+
 from config import config
+
 
 # link for extract html data
 def getdata(url, headers):
@@ -35,9 +36,8 @@ def get_existing_urls(existing_urls_path):
     return existing_urls
    
 def get_new_urls(existing_urls_path, main_urls_path, words2check):    
-    new_urls = []
     existing_urls = get_existing_urls(existing_urls_path)
-
+    new_urls = []
     with open(existing_urls_path, "a+") as f:
         with open (main_urls_path, 'r') as main_urls:
             for line in main_urls:

@@ -12,6 +12,7 @@ from openie import StanfordOpenIE
 from spacy.lang.en import English
 from spacy.matcher import Matcher
 from spacy.tokens import Span
+from thefuzz import fuzz, process
 
 from config import config
 from web_scrape import *
@@ -22,15 +23,13 @@ def get_relation(sent, nlp):
     extract relation by using spacy Matcher
     """
     doc = nlp(sent)
-    
-    # Matcher class object 
+    # Matcher class object
     matcher = Matcher(nlp.vocab)
-
-    #define the pattern 
-    pattern = [{'DEP':'ROOT'}, 
-            {'DEP':'prep','OP':"?"},
-            {'DEP':'agent','OP':"?"},  
-            {'POS':'ADJ','OP':"?"}] 
+    # define the pattern
+    pattern = [{'DEP': 'ROOT'},
+               {'DEP': 'prep', 'OP': "?"},
+               {'DEP': 'agent', 'OP': "?"},
+               {'POS': 'ADJ', 'OP': "?"}]
 
     matcher.add("matching_1", [pattern])
     matches = matcher(doc)
@@ -38,15 +37,16 @@ def get_relation(sent, nlp):
     span = doc[matches[k][1]:matches[k][2]]
     start_pos = sent.find(span.text)
 
-    return(span.text, start_pos)
+    return (span.text, start_pos)
+
 
 def get_lower_bound(haystack, needle):
     start_idx = bisect.bisect(haystack, needle)
-
     if 0 < start_idx < len(haystack):
         return start_idx-1
     else:
         return np.nan
+
 
 def extract_entity(sent_text):
     try:
@@ -63,7 +63,8 @@ def extract_entity(sent_text):
 
         for idx, sentence in enumerate(sent_text):
             _sentence = [str(sentence)]
-            response = text_analytics_client.recognize_entities(_sentence, language="en")
+            response = text_analytics_client.recognize_entities(
+                _sentence, language="en")
             result = [doc for doc in response if not doc.is_error]
 
             for doc in result:
@@ -74,60 +75,45 @@ def extract_entity(sent_text):
                     eoffset_list.append(entity.offset)
                     idx_list.append(idx)
 
-        entities_df = pd.DataFrame(list(zip(idx_list, etext_list, ecategory_list, econfi_score_list, eoffset_list))).reset_index(drop=True)
-        entities_df.columns = ['idx', 'entity', 'entity_category', 'entity_score', 'entity_offset']
-    
+        entities_df = pd.DataFrame(list(zip(
+            idx_list, etext_list, ecategory_list, econfi_score_list, eoffset_list))).reset_index(drop=True)
+        entities_df.columns = ['idx', 'entity',
+                               'entity_category', 'entity_score', 'entity_offset']
+
     except Exception as ex:
         print(ex)
 
     return entities_df
 
-def merge_en_rel(entities_df, relations_df):
-    # Merged entities and relations
-    for id, row in relations_df.iterrows():
-        sub = entities_df[entities_df['idx']==id].reset_index(drop=True)
-        start_idx = get_lower_bound(sub.entity_offset.tolist(), row['offset'])
-        if math.isnan(start_idx) is False:     
-            sub_olist = sub.loc[start_idx: start_idx+1, 'entity_offset'].tolist()
-            entities_df.loc[(entities_df['idx']==id)& (entities_df.entity_offset == sub_olist[0]), 'is_source'] = "Y"
-            entities_df.loc[(entities_df['idx']==id) & (entities_df['entity_offset'].isin(sub_olist)), 'has_rel'] = id
-        else:
-            continue
-    
-    return entities_df, relations_df
 
 def remove_char(remove_list, text):
     for char in remove_list:
         text = text.replace(char, "")
     return text
 
+
 def find_subjects(parsed_text):
     subject_list = []
     object_list = []
-    #get token dependencies
+    # get token dependencies
     for text in parsed_text:
-        #subject would be
+        # subject would be
         if text.dep_ == "nsubj":
             subject = text.orth_
             subject_list.append(subject)
-            # print(f"subject: {subject}")
-        #iobj for indirect object
-        if text.dep_ == "iobj":
-            indirect_object = text.orth_
-            # print(f"indirect object: {indirect_object}")
-        #dobj for direct object
+        # dobj for direct object
         if text.dep_ == "dobj":
             direct_object = text.orth_
-            # print(f"direct object: {direct_object}")
             object_list.append(direct_object)
     return subject_list, object_list
 
+
 def get_triple(sent_text):
     """get triple by using stanford_openie
-    """    
+    """
     triple_list = []
     triple_df = pd.DataFrame()
-    properties = {'openie.affinity_probability_cap': 2 / 3,}
+    properties = {'openie.affinity_probability_cap': 2 / 3, }
 
     with StanfordOpenIE(properties=properties) as client:
         for idx, sent in enumerate(sent_text):
@@ -143,5 +129,10 @@ def get_triple(sent_text):
         df = pd.DataFrame(sub)
         df['idx'] = idx
         triple_df = pd.concat([triple_df, df], ignore_index=True, sort=False)
-        
+
     return triple_df
+
+
+def similarity_text(text1, text2):
+    res = fuzz.ratio(str(text1), str(text2))
+    return res
