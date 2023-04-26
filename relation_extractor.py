@@ -13,6 +13,8 @@ from spacy.lang.en import English
 from spacy.matcher import Matcher
 from spacy.tokens import Span
 from thefuzz import fuzz, process
+from dotenv import load_dotenv
+import os
 
 from config import config
 from web_scrape import *
@@ -50,8 +52,11 @@ def get_lower_bound(haystack, needle):
 
 def extract_entity(sent_text):
     try:
-        credential = AzureKeyCredential(config.LANGUAGE_SERVICE_KEY)
-        endpoint = config.LANGUAGE_SERVICE_ENDPOINT
+        load_dotenv()
+        # credential = AzureKeyCredential(config.LANGUAGE_SERVICE_KEY)
+        credential = AzureKeyCredential(os.getenv("LANGUAGE_SERVICE_KEY"))
+        # endpoint = config.LANGUAGE_SERVICE_ENDPOINT
+        endpoint = os.getenv("LANGUAGE_SERVICE_ENDPOINT")
         text_analytics_client = TextAnalyticsClient(endpoint, credential)
 
         entities_df = []

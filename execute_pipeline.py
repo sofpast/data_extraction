@@ -5,6 +5,8 @@ import spacy
 from fake_useragent import UserAgent
 from gremlin_python.driver import client, protocol, serializer
 from gremlin_python.driver.protocol import GremlinServerError
+from dotenv import load_dotenv
+import os
 
 from knowledge_graph import *
 from relation_extractor import *
@@ -29,20 +31,18 @@ def extract_vertice_edges(existing_urls, en_to_keep, special_chars):
     """extract list of vertices and edges from list of urls
     """
     # Gremlin queries
-    _gremlin_insert_vertices = _gremlin_insert_edges = []
-    entities_df = triple_df = pd.DataFrame()
-    # open urls
-    # existing_urls = get_existing_urls(existing_urls_path)
+    _gremlin_insert_vertices = []
+    _gremlin_insert_edges = []
 
     for url in existing_urls:
+        entities_df = triple_df = pd.DataFrame()
         sent_text = scrape_web(url, nlp, headers)
         # get triple from stanford_openie
         triple_df = get_triple(sent_text)
-
         # extract entities
         entities_df = extract_entity(sent_text)
-        # entities_df = pd.read_pickle('data/tmp/en4.pkl')
-        logger.info(f"Extracting en_rel for website: {url}")
+        # entities_df = pd.read_pickle('data/tmp/en.pkl')
+        logger.info(f"Extracting en_rel for url: {url}")
         logger.info(
             f"Extracted entities_df shape: {entities_df.shape[0]} | triple_df shape: {triple_df.shape[0]}")
 
@@ -55,8 +55,7 @@ def extract_vertice_edges(existing_urls, en_to_keep, special_chars):
                                   how='left', on=['idx'])
             idx_lst = subject_df[~subject_df.relation.isnull()
                                  ]['idx'].unique().tolist()
-            import pdb
-            pdb.set_trace()
+
             # en_rel_df relation to prepare gremlin queries
             en_rel_df = pd.DataFrame()
             for idx in idx_lst:
@@ -75,8 +74,10 @@ def extract_vertice_edges(existing_urls, en_to_keep, special_chars):
                 en_rel_df['en_obj'].str.len() != 0)][['idx', 'entity', 'relation', 'en_obj']]
             en_rel_df = en_rel_df.explode(
                 'en_obj').drop_duplicates().reset_index(drop=True)
+            en_rel_df = en_rel_df[en_rel_df['entity'] !=
+                                  en_rel_df['en_obj']].reset_index(drop=True)
             logger.info(f"en_rel_df shape: {en_rel_df.shape[0]}")
-
+            
             # prepare gremlin insert vertices queries
             df = entities_df.sort_values(
                 'entity_score', ascending=False).drop_duplicates('entity').sort_index()
@@ -86,7 +87,7 @@ def extract_vertice_edges(existing_urls, en_to_keep, special_chars):
             df['getV'] = "g.V().has('id','" + df['entity'] + "')"
             df['addV'] = df['getV'] + \
                 ".fold().coalesce(unfold()," + df['_addV'] + ")"
-            _gremlin_insert_vertices = df['addV'].tolist()
+            _gremlin_insert_vertices.append(df['addV'].tolist())
 
             # prepare gremlin insert edges queries
             en_rel_df['getS'] = "g.V().has('id','" + en_rel_df['entity'] + "')"
@@ -99,7 +100,10 @@ def extract_vertice_edges(existing_urls, en_to_keep, special_chars):
                 "').to(" + en_rel_df['getD'] + ")"
             en_rel_df['addE'] = en_rel_df['getE'] + \
                 ".fold().coalesce(unfold()," + en_rel_df['_addE'] + ")"
-            _gremlin_insert_edges = en_rel_df['addE'].tolist()
+            _gremlin_insert_edges.append(en_rel_df['addE'].tolist())
+  
+    _gremlin_insert_vertices = [vertex for sub in _gremlin_insert_vertices for vertex in sub]
+    _gremlin_insert_edges = [edge for sub in _gremlin_insert_edges for edge in sub]
 
     return _gremlin_insert_vertices, _gremlin_insert_edges
 
@@ -108,27 +112,33 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--drop_graph", action='store_true',
                         help="Drop existing graph before inserting")
-    parser.add_argument("--mode", type=str, default="urls_from_txt",
+    parser.add_argument("--mode", type=str, default="auto_scrape_urls",
                         help="Run mode (urls_from_txt/auto_scrape_urls)")
 
     args = parser.parse_args()
-    new_urls = []
+    new_urls = _gremlin_insert_vertices = _gremlin_insert_edges = []
 
     if args.mode == "urls_from_txt":
         existing_urls = get_existing_urls(config.existing_urls_path)
+        if len(existing_urls) == 0:
+            logger.info("No urls founded in existing_urls")
         _gremlin_insert_vertices, _gremlin_insert_edges = extract_vertice_edges(
             existing_urls[:config.urls_limit], config.en_to_keep, config.special_chars)
+        
     elif args.mode == "auto_scrape_urls":
         new_urls = get_new_urls(config.existing_urls_path,
                                 config.main_urls_path, config.words2check)
+        if len(new_urls) == 0:
+            logger.info(f"Auto scrape - no new urls found | len new_urls: {len(new_urls)}")
         _gremlin_insert_vertices, _gremlin_insert_edges = extract_vertice_edges(
             new_urls[:config.urls_limit], config.en_to_keep, config.special_chars)
-
+             
     # open database and insert into DB
     try:
-        client = client.Client(config.COSMOSDB_WWS, 'g',
-                               username=config.COSMOSDB_USERNAME,
-                               password=config.COSMOSDB_PASSWORD,
+        load_dotenv()
+        client = client.Client(os.getenv("COSMOSDB_WWS"), 'g',
+                               username=os.getenv("COSMOSDB_USERNAME"),
+                               password=os.getenv("COSMOSDB_PASSWORD"),
                                message_serializer=serializer.GraphSONSerializersV2d0()
                                )
         logger.info("Connect to Azure Cosmos DB + Gremlin successfully")
@@ -140,7 +150,7 @@ if __name__ == "__main__":
 
         # Insert all vertices
         if len(_gremlin_insert_vertices) > 0:
-            if len(_gremlin_insert_vertices) > 100:
+            if len(_gremlin_insert_vertices) > config.chunk_size:
                 v_gremlin_insert_chunks = [_gremlin_insert_vertices[i: i+config.chunk_size]
                                            for i in range(0, len(_gremlin_insert_vertices), config.chunk_size)]
                 for v_chunk in v_gremlin_insert_chunks:
@@ -150,7 +160,7 @@ if __name__ == "__main__":
                 f"Number of vertices to insert into the graph: {len(_gremlin_insert_vertices)}")
 
         if len(_gremlin_insert_edges) > 0:
-            if len(_gremlin_insert_edges) > 100:
+            if len(_gremlin_insert_edges) > config.chunk_size:
                 e_gremlin_insert_chunks = [_gremlin_insert_edges[i: i+config.chunk_size]
                                            for i in range(0, len(_gremlin_insert_edges), config.chunk_size)]
                 for e_chunk in e_gremlin_insert_chunks:
@@ -160,6 +170,7 @@ if __name__ == "__main__":
                 f"Number of edges to insert into the graph: {len(_gremlin_insert_edges)}")
 
         # Count all vertices
+        logger.info("Count number of vertices in the graph")
         count_vertices(client)
 
     except GremlinServerError as e:

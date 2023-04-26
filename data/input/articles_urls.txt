@@ -1,1 +1,12 @@
+https://symantec-enterprise-blogs.security.com/blogs/threat-intelligence/xtrader-3cx-supply-chain
+https://www.crowdstrike.com/blog/crowdstrike-detects-and-prevents-active-intrusion-campaign-targeting-3cxdesktopapp-customers/
 https://www.trendmicro.com/en_us/research/23/d/vipersoftx-updates-encryption-steals-data.html
+https://www.trendmicro.com/en_us/research/23/d/aws-level-1-mssp-competency-status.html
+https://www.trendmicro.com/en_us/research/23/d/an-analysis-of-the-bablock-ransomware.html
+https://www.trendmicro.com/en_us/research/23/d/stay-ahead-of-cyber-threats.html
+https://www.trendmicro.com/en_us/research/23/d/unpacking-the-structure-of-modern-cybercrime-organizations--.html
+https://www.trendmicro.com/en_us/research/23/c/s4x23-review-cybersecurity-industrial-iot.html
+https://www.trendmicro.com/en_us/research/23/c/mac-malware-macstealer-spreads-as-fake-p2-e-apps.html
+https://www.trendmicro.com/en_us/research/23/c/fight-mercenaries-cybersecurity-tech-accord.html
+https://www.trendmicro.com/en_us/research/23/c/information-on-attacks-involving-3cx-desktop-app.html
+https://www.trendmicro.com/en_us/research/23/c/ics-ot-cybersecurity-2022-txone-annual-report-insights.html
