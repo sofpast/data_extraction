@@ -130,5 +130,5 @@ You can query data by using Gremlin or query by interacting in UI. The output wi
 <img src="samples/kb.png" width="800" height="400">
 
 # Solution Architectures
-TO be updated
+<img src="samples/hack_pipeline.png" width="800" height="400">
 
