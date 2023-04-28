@@ -12,7 +12,7 @@ sub_match_thresh = 30
 
 # Chunk size to insert into Database
 chunk_size = 100
-urls_limit = 2
+urls_limit = 1
 
 # Save_log
 save_log='logs'

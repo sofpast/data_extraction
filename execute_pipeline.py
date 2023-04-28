@@ -35,14 +35,16 @@ def extract_vertice_edges(existing_urls, en_to_keep, special_chars):
     _gremlin_insert_edges = []
 
     for url in existing_urls:
+        logger.info(f"Extracting en_rel for url: {url}")
         entities_df = triple_df = pd.DataFrame()
         sent_text = scrape_web(url, nlp, headers)
         # get triple from stanford_openie
+        logger.info("Extracting triple ...")
         triple_df = get_triple(sent_text)
         # extract entities
+        logger.info("Extracting entities ...")
         entities_df = extract_entity(sent_text)
         # entities_df = pd.read_pickle('data/tmp/en.pkl')
-        logger.info(f"Extracting en_rel for url: {url}")
         logger.info(
             f"Extracted entities_df shape: {entities_df.shape[0]} | triple_df shape: {triple_df.shape[0]}")
 
@@ -76,8 +78,10 @@ def extract_vertice_edges(existing_urls, en_to_keep, special_chars):
                 'en_obj').drop_duplicates().reset_index(drop=True)
             en_rel_df = en_rel_df[en_rel_df['entity'] !=
                                   en_rel_df['en_obj']].reset_index(drop=True)
+            en_rel_df = en_rel_df.groupby(['entity', 'en_obj']).first(
+            ).reset_index().sort_values('idx', ascending=True)
             logger.info(f"en_rel_df shape: {en_rel_df.shape[0]}")
-            
+
             # prepare gremlin insert vertices queries
             df = entities_df.sort_values(
                 'entity_score', ascending=False).drop_duplicates('entity').sort_index()
@@ -101,9 +105,11 @@ def extract_vertice_edges(existing_urls, en_to_keep, special_chars):
             en_rel_df['addE'] = en_rel_df['getE'] + \
                 ".fold().coalesce(unfold()," + en_rel_df['_addE'] + ")"
             _gremlin_insert_edges.append(en_rel_df['addE'].tolist())
-  
-    _gremlin_insert_vertices = [vertex for sub in _gremlin_insert_vertices for vertex in sub]
-    _gremlin_insert_edges = [edge for sub in _gremlin_insert_edges for edge in sub]
+
+    _gremlin_insert_vertices = [
+        vertex for sub in _gremlin_insert_vertices for vertex in sub]
+    _gremlin_insert_edges = [
+        edge for sub in _gremlin_insert_edges for edge in sub]
 
     return _gremlin_insert_vertices, _gremlin_insert_edges
 
@@ -124,15 +130,16 @@ if __name__ == "__main__":
             logger.info("No urls founded in existing_urls")
         _gremlin_insert_vertices, _gremlin_insert_edges = extract_vertice_edges(
             existing_urls[:config.urls_limit], config.en_to_keep, config.special_chars)
-        
+
     elif args.mode == "auto_scrape_urls":
         new_urls = get_new_urls(config.existing_urls_path,
                                 config.main_urls_path, config.words2check)
         if len(new_urls) == 0:
-            logger.info(f"Auto scrape - no new urls found | len new_urls: {len(new_urls)}")
+            logger.info(
+                f"Auto scrape - no new urls found | len new_urls: {len(new_urls)}")
         _gremlin_insert_vertices, _gremlin_insert_edges = extract_vertice_edges(
             new_urls[:config.urls_limit], config.en_to_keep, config.special_chars)
-             
+
     # open database and insert into DB
     try:
         load_dotenv()
