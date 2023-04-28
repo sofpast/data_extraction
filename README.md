@@ -127,7 +127,7 @@ This will trigger from scaping blog/ articles' contents that are specified in `d
 2023-04-26 13:43:30,922: INFO: Count number of vertices in the graph
 ```
 You can query data by using Gremlin or query by interacting in UI. The output will look as below:
-<img src="samples/kb.png" width="800" height="400">
+<img src="samples/kb.PNG" width="800" height="400">
 
 # Solution Architectures
 <img src="samples/hack_pipeline.png" width="800" height="400">
