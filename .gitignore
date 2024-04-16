@@ -15,3 +15,6 @@ data/output/
 
 # Project documentation
 docs/_build/
+
+# environment
+.env
